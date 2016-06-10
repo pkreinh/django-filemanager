@@ -1,9 +1,12 @@
+# coding:utf-8
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.shortcuts import render
+from django.utils.translation import ugettext_lazy as _
 from django.http import HttpResponseRedirect, HttpResponse
 from django.template import RequestContext
-from django.core.servers.basehttp import FileWrapper
+#from django.core.servers.basehttp import FileWrapper
+from wsgiref.util import FileWrapper
 from django import forms
 from PIL import Image
 import settings
@@ -16,12 +19,12 @@ import tarfile
 path_end = r'(?P<path>[\w\d_ -/.]*)$'
 
 ActionChoices = (
-    ('upload','upload'),
-    ('rename','rename'),
-    ('delete','delete'),
-    ('add','add'),
-    ('move','move'),
-    ('copy','copy'),
+    ('upload',_(u'hochladen')),
+    ('rename',_(u'umbenennen')),
+    ('delete',_(u'löschen')),
+    ('add',_(u'hinzufügen')),
+    ('move',_(u'verschieben')),
+    ('copy',_(u'kopieren')),
   )
 
 class FileManagerForm(forms.Form):
@@ -37,7 +40,7 @@ class FileManager(object):
   maxspace,maxfilesize in KB
   """
   idee = 0
-  def __init__(self,basepath,ckeditor_baseurl='',maxfolders=50,maxspace=5*1024,maxfilesize=1*1024,public_url_base=None,extensions=None):
+  def __init__(self,basepath,ckeditor_baseurl='',maxfolders=50,maxspace=5*1024,maxfilesize=1*1024,public_url_base=None,extensions=None,template='filemanager/index.html'):
     if basepath[-1] == '/':
       basepath = basepath[:-1]
     if ckeditor_baseurl and ckeditor_baseurl[-1] == '/':
@@ -49,6 +52,7 @@ class FileManager(object):
     self.maxfilesize = maxfilesize
     self.extensions = extensions;
     self.public_url_base = public_url_base
+    self.template = template
 
   def rename_if_exists(self,folder,file):
     if folder[-1] != os.sep:
@@ -292,7 +296,7 @@ class FileManager(object):
         space_consumed = self.get_size(self.basepath)
     else:
         space_consumed = 0
-    return render(request, 'filemanager/index.html', {
+    return render(request, self.template, {
         'dir_structure': self.directory_structure(),
         'messages':map(str,messages),
         'current_id':self.current_id,
