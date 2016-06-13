@@ -95,27 +95,27 @@ class FileManager(object):
     self.current_path = form.cleaned_data['current_path']
     messages = []
     if name and file_or_dir == 'dir' and not re.match(r'[\w\d_ -]+',name).group(0) == name:
-      messages.append("Invalid folder name : "+name)
+      messages.append(_(u'Ungültiger Ordnername : %(name)s') % {'name': name})
       return messages
     if name and file_or_dir == 'file' and (re.search('\.\.',name) or not re.match(r'[\w\d_ -.]+',name).group(0) == name):
-      messages.append("Invalid file name : "+name)
+      messages.append(_(u'Ungültiger Dateiname : %(name)s') % {'name': name})
       return messages
     if not re.match(r'[\w\d_ -/]+',path).group(0) == path:
-      messages.append("Invalid path : "+path)
+      messages.append(_(u'Ungültige Pfadangabe : %(path)s') % {'path': name})
       return messages
     if action == 'upload':
       for f in files.getlist('ufile'):
         if re.search('\.\.',f.name) or not re.match('[\w\d_ -/.]+',f.name).group(0) == f.name:
-          messages.append("File name is not valid : "+f.name)
+          messages.append(_(u'Ungültiger Dateiname : %(name)s') % {'name': f.name})
         elif f.size > self.maxfilesize*1024:
-          messages.append("File size exceeded "+str(self.maxfilesize)+" KB : "+f.name)
+          messages.append(_(u'Dateigröße überschritten %(max) KB : %(name)s') % {'max': self.maxfilesize, 'name': f.name})
         elif (settings.FILEMANAGER_CHECK_SPACE and
              ((self.get_size(self.basepath)+f.size) > self.maxspace*1024)):
-          messages.append("Total Space size exceeded "+str(self.maxspace)+" KB : "+f.name)
+          messages.append(_(u'Zulässige Speicherplatzgröße überschritten %(max) KB : %(name)s') % {'max': self.maxspace, 'name': f.name})
         elif self.extensions and len(f.name.split('.'))>1 and f.name.split('.')[-1] not in self.extensions:
-            messages.append("File extension not allowed (."+f.name.split('.')[-1]+") : "+f.name)
+            messages.append(_(u'Dateinamenerweiterung (Suffix) nicht erlaubt (%(suffix)) : %(name)') % {'suffix': f.name.split('.')[-1], 'name': f.name})
         elif self.extensions and len(f.name.split('.'))==1 and f.name.split('.')[-1] not in self.extensions:
-            messages.append("No file extension in uploaded file : "+f.name)
+            messages.append(_(u'Keine Dateinamenerweiterung (Suffix) in der hochgeladenen Datei : %(name)') % {'name': f.name})
         else:
           filepath = self.basepath+path+self.rename_if_exists(self.basepath+path,f.name)
           with open(filepath,'w') as dest:
@@ -123,7 +123,7 @@ class FileManager(object):
               dest.write(chunk)
           f.close()
       if len(messages) == 0:
-        messages.append('All files uploaded successfully')
+        messages.append(_(u'Alle Dateien erfolgreich hoch geladen'))
     elif action == 'add':
       os.chdir(self.basepath)
       no_of_folders = len(list(os.walk('.')))
@@ -131,32 +131,32 @@ class FileManager(object):
         try:
           os.chdir(self.basepath+path)
           os.mkdir(name)
-          messages.append('Folder created successfully : '+name)
+          messages.append(_(u'Ordner erfolgreich angelegt: %(name)s') % {'name': name})
         except:
-          messages.append('Folder couldn\'t be created : '+name)
+          messages.append(_(u'Ordner konnte nicht angelegt werden: %(name)s') % {'name': name})
       else:
-        messages.append('Folder couldn\' be created because maximum number of folders exceeded : '+str(self.maxfolders))
+        messages.append(_(u'Ordner konnte nicht angelegt werden da maximal Anzahl erreicht: %(max)s') % {'max': self.maxfolders})
     elif action == 'rename' and file_or_dir == 'dir':
       oldname = path.split('/')[-2]
       path = '/'.join(path.split('/')[:-2])
       try:
         os.chdir(self.basepath+path)
         os.rename(oldname,name)
-        messages.append('Folder renamed successfully from '+oldname+' to '+name)
+        messages.append(_(u'Ordner erfolgreich umbenannt von %(alt)s nach %(neu)s') % {'alt': oldname, 'neu' :name})
       except:
-        messages.append('Folder couldn\'t renamed to '+name)
+        messages.append(_(u'Ordner konnte nicht auf %(name)s umbenannt werden') % {'name': name})
     elif action == 'delete' and file_or_dir == 'dir':
       if path =='/':
-        messages.append('root folder can\'t be deleted')
+        messages.append(_(u'root Ordner kann nicht gelöscht werden'))
       else:
         name = path.split('/')[-2]
         path = '/'.join(path.split('/')[:-2])
         try:
           os.chdir(self.basepath+path)
           shutil.rmtree(name)
-          messages.append('Folder deleted successfully : '+name)
+          messages.append(_(u'Ordner erfolgreich gelöscht : %(name)s') % {'name': name})
         except:
-          messages.append('Folder couldn\'t deleted : '+name)
+          messages.append(_(u'Ordner konnte nich gelöscht werden : %(name)s') % {'name': name})
     elif action == 'rename' and file_or_dir == 'file':
       oldname = path.split('/')[-1]
       old_ext = oldname.split('.')[1] if len(oldname.split('.'))>1 else None
@@ -166,34 +166,34 @@ class FileManager(object):
         try:
           os.chdir(self.basepath+path)
           os.rename(oldname,name)
-          messages.append('File renamed successfully from '+oldname+' to '+name)
+          messages.append(_(u'Datei erfolgreich umbenannt von %(alt)s nach %(neu)s') % {'alt': oldname, 'neu' :name})
         except:
-          messages.append('File couldn\'t be renamed to '+name)
+          messages.append(_(u'Datei konnte nicht auf %(name)s umbenannt werden') % {'name': name})
       else:
         if old_ext:
-          messages.append('File extension should be same : .'+old_ext)
+          messages.append(_(u'Die Dateierweiterung (Suffix) sollte gleich sein : %(suffix)s ') % {'suffix': old_ext})
         else:
-          messages.append('New file extension didn\'t match with old file extension')
+          messages.append(_(u'Die neue Datie hat nicht die selbe Dateierweiterung (Suffix)'))
     elif action == 'delete' and file_or_dir == 'file':
       if path =='/':
-        messages.append('root folder can\'t be deleted')
+        messages.append(_(u'root Ordner kann nicht gelöscht werden'))
       else:
         name = path.split('/')[-1]
         path = '/'.join(path.split('/')[:-1])
         try:
           os.chdir(self.basepath+path)
           os.remove(name)
-          messages.append('File deleted successfully : '+name)
+          messages.append(_(u'Datei erfolgreich gelöscht : %(name)s') % {'name': name})
         except:
-          messages.append('File couldn\'t deleted : '+name)
+          messages.append(_(u'Datei konnte nich gelöscht werden : %(name)s') % {'name': name})
     elif action == 'move' or action == 'copy':
       # from path to current_path
       if self.current_path.find(path) == 0:
-        messages.append('Cannot move/copy to a child folder')
+        messages.append(_(u'Unterordner kann nicht verschoben/kopiert werden'))
       else :
         path = os.path.normpath(path) # strip trailing slash if any
         if os.path.exists(self.basepath+self.current_path+os.path.basename(path)):
-          messages.append('ERROR: A file/folder with this name already exists in the destination folder.')
+          messages.append('Fehler: Eine Datei/Ordner mit diesem Namen existiert schon im Zielordner.')
         else:
           if action == 'move':
             method = shutil.move
@@ -205,7 +205,7 @@ class FileManager(object):
           try:
             method(self.basepath+path, self.basepath+self.current_path+os.path.basename(path))
           except:
-            messages.append('File/folder couldn\'t be moved/copied.')
+            messages.append('Datei/Ordner kann nicht verschoben/kopiert werden.')
     return messages
 
   def directory_structure(self):
@@ -298,7 +298,7 @@ class FileManager(object):
         space_consumed = 0
     return render(request, self.template, {
         'dir_structure': self.directory_structure(),
-        'messages':map(str,messages),
+        'messages':map(str,[e.encode('ascii', 'xmlcharrefreplace') for e in messages]),
         'current_id':self.current_id,
         'CKEditorFuncNum':CKEditorFuncNum,
         'ckeditor_baseurl':self.ckeditor_baseurl,
