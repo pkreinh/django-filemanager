@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
-from pip.req import parse_requirements
+try: # for pip >= 10
+    from pip._internal.req import parse_requirements
+except: #for pip <= 9.0.3
+    from pip.req import parse_requirements
 
 # parse requirements
 # reqs = parse_requirements("requirements/common.txt")
